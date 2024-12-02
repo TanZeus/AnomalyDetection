@@ -1,0 +1,22 @@
+# Ignore Python virtual environments
+venv/
+.venv/
+# Ignore PyCharm project files
+.idea/
+*.iml
+# Ignore Python bytecode files
+__pycache__/
+*.py[cod]
+# Ignore other typical Python and project-specific files
+.DS_Store
+# Ignore data files
+data/**/*.csv
+data/**/*.zip
+data/**/*.pkl
+data/**/*.txt
+models/**/*.pkl
+models/**/*.zip
+models/**/*.rar
+models/**/*.pth
+static/plots/*.png
+Evaluation Results.pdf

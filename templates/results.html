@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Results</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <style>
+        .divider-table td, .divider-table th {
+            border-right: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body class="container">
+    <h2 class="center-align">Model Evaluation Results</h2>
+
+    <div class="row">
+        {% for model_name, cm_path in cm_paths.items() %}
+            <div class="col s12 m6">
+                <h5>{{ model_name }}</h5>
+                <img src="/{{ cm_path }}" alt="{{ model_name }} Confusion Matrix" class="responsive-img">
+                <h5>{{ model_name }} Classification Report</h5>
+                <table class="highlight centered divider-table">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1-Score</th>
+                            <th>Support</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_label, metrics in classification_reports[model_name].items() %}
+                            <tr>
+                                <td>{{ class_label }}</td>
+                                {% if metrics is mapping %}
+                                    <td>{{ metrics.get("precision", "N/A") | round(2) if metrics.get("precision") is not none else "N/A" }}</td>
+                                    <td>{{ metrics.get("recall", "N/A") | round(2) if metrics.get("recall") is not none else "N/A" }}</td>
+                                    <td>{{ metrics.get("f1-score", "N/A") | round(2) if metrics.get("f1-score") is not none else "N/A" }}</td>
+                                    <td>{{ metrics.get("support", "N/A") | int if metrics.get("support") is not none else "N/A" }}</td>
+                                {% else %}
+                                    <!-- For non-dictionary rows like 'accuracy', only display the score in the f1 column -->
+                                    <td colspan="2"></td>
+                                    <td>{{ metrics | round(2) }}</td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h4 class="center-align">Precision-Recall and ROC Curves</h4>
+    <div class="row center-align">
+        <div class="col s6">
+            <img src="/{{ pr_path }}" alt="Precision-Recall Curve" class="responsive-img">
+        </div>
+        <div class="col s6">
+            <img src="/{{ roc_path }}" alt="ROC Curve" class="responsive-img">
+        </div>
+    </div>
+
+    <div class="center-align">
+        <a href="/" class="btn waves-effect waves-light">Back to Model Selection</a>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>

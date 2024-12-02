@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Anomaly Detection</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="container">
+    <h2 class="center-align">Real-Time Anomaly Detection</h2>
+
+    <div class="row">
+        <form id="liveModelForm" class="col s12 m6 offset-m3">
+            <div class="input-field">
+                {% for model in models %}
+                    <div class="checkbox-item" style="margin-bottom: 10px;">
+                        <label>
+                            <input type="checkbox" name="models" value="{{ model }}">
+                            <span>{{ model }}</span>
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="center-align">
+                <button type="button" class="btn waves-effect waves-light" id="startMonitorBtn">Start Monitoring</button>
+                <button type="button" class="btn red lighten-1" id="stopMonitorBtn" style="display:none;">Stop Monitoring</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <canvas id="liveChart" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        let monitoring = false;
+        let intervalId = null;
+
+        // Initialize Chart.js with a pie chart
+        const ctx = document.getElementById('liveChart').getContext('2d');
+        const liveChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderColor: [],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Real-Time Anomaly Detection'
+                    }
+                }
+            }
+        });
+
+        // Helper function to add data to the pie chart
+        function addData(label, data, backgroundColor, borderColor) {
+            liveChart.data.labels.push(label);
+            liveChart.data.datasets[0].data.push(data);
+            liveChart.data.datasets[0].backgroundColor.push(backgroundColor);
+            liveChart.data.datasets[0].borderColor.push(borderColor);
+            liveChart.update();
+        }
+
+        // Fetch selected models from checkboxes
+        function getSelectedModels() {
+            const checkboxes = document.querySelectorAll('input[name="models"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // Start monitoring function
+        function startMonitoring() {
+            monitoring = true;
+            document.getElementById('startMonitorBtn').style.display = 'none';
+            document.getElementById('stopMonitorBtn').style.display = 'inline-block';
+            const selectedModels = getSelectedModels();
+
+            // Reset data
+            liveChart.data.labels = [];
+            liveChart.data.datasets[0].data = [];
+            liveChart.data.datasets[0].backgroundColor = [];
+            liveChart.data.datasets[0].borderColor = [];
+            liveChart.update();
+
+            // Poll the live data endpoint every 2 seconds
+            intervalId = setInterval(() => {
+                fetch('/generate_live_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ selected_models: selectedModels })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Process each model's data and add to the pie chart
+                    selectedModels.forEach((model, index) => {
+                        const isAnomaly = data.predictions[model] === 1;
+                        const color = isAnomaly ? 'rgba(255, 0, 0, 0.6)' : 'rgba(0, 255, 0, 0.6)';
+                        addData(model, data.predictions[model], color, color);
+                    });
+                });
+            }, 2000);
+        }
+
+        // Stop monitoring function
+        function stopMonitoring() {
+            monitoring = false;
+            document.getElementById('startMonitorBtn').style.display = 'inline-block';
+            document.getElementById('stopMonitorBtn').style.display = 'none';
+            clearInterval(intervalId);
+        }
+
+        document.getElementById('startMonitorBtn').addEventListener('click', () => {
+            if (!monitoring) startMonitoring();
+        });
+
+        document.getElementById('stopMonitorBtn').addEventListener('click', () => {
+            if (monitoring) stopMonitoring();
+        });
+    </script>
+
+    <div class="center-align">
+        <a href="/" class="btn waves-effect waves-light">Back to Model Selection</a>
+    </div>
+</body>
+</html>
