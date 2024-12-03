@@ -20,3 +20,4 @@ models/**/*.rar
 models/**/*.pth
 static/plots/*.png
 Evaluation Results.pdf
+data/pcap-files/2013-capture-only-dns.pcap
